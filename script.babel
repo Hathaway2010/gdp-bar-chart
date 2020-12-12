@@ -1,0 +1,84 @@
+document.addEventListener("DOMContentLoaded", () => {
+  const req = new XMLHttpRequest();
+  req.open("GET", "https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/GDP-data.json", true);
+  req.send();
+  req.onload = function() {
+    const json = JSON.parse(req.responseText);
+    const dataset = json.data;
+    const svg = d3.select("svg");
+    const padding = 60;
+    const h = 500;
+    const w = 1000;
+    const readDate = (string) => new Date(Number(string.slice(0, 4)), Number(string.slice(5, 7) - 1));
+    const xScale = d3.scaleTime()
+    .domain([readDate(dataset[0][0]), readDate(dataset[dataset.length-1][0])])
+    .range([padding, w - padding])
+    const yScale = d3.scaleLinear()
+    .domain ([0, d3.max(dataset, d => d[1])])
+    .range([h - padding, padding]);
+   let dataDate = (data) => data[0];
+    d3.select("#all").append("div")
+  .attr("id", "tooltip")
+  .style("opacity", 0);
+    
+    svg.selectAll("rect")
+    .data(dataset)
+    .enter()
+    .append("rect")
+    .attr("class", "bar")
+    .attr("x", (d) => xScale(readDate(d[0])))
+    .attr("y", d => yScale(d[1]))
+    .attr("width", (w - 2 * padding) / dataset.length)
+    .attr("height", d => h - padding - yScale(d[1]))
+    .attr("data-date", d => dataDate(d))
+    .attr("data-gdp", d => d[1])
+    .on("mouseover", (d, i) => {
+       d3.select("#tooltip").style("opacity", 0.9)
+      .attr("data-date", i[0])
+      .style("left", `${xScale(readDate(i[0]))}px`)
+      .html(`<p>${i[0]}</p>${i[1]} billion dollars`);
+      
+    })
+    .on("mouseout", () => {
+      d3.select("#tooltip").style("opacity", 0);
+    });
+    
+    svg.append("text")
+       .attr("x", w / 2)
+       .attr("y", padding)
+       .attr("text-anchor", "middle")
+       .attr("id", "title")
+       .text("USA Quarterly GDP")
+ 
+    const xAxis = d3.axisBottom(xScale)
+    .ticks(d3.timeYear.every(5));
+;
+    svg.append("g")
+    .attr("transform", `translate(0, ${h-padding})`)
+    .attr("id", "x-axis")
+    .call(xAxis);
+    
+    const yAxis = d3.axisLeft(yScale);
+    svg.append("g")
+    .attr("transform", `translate(${padding}, 0)`)
+    .attr("id", "y-axis")
+    .call(yAxis);
+    
+    svg.append("text")
+    .attr("x", w / 2)
+    .attr("y", h - padding / 3)
+    .attr("id", "label-x")
+    .text("Year");
+    
+    svg.append("text")
+    .attr("x", w / 2)
+    .attr("y", h / 2)
+    .attr("text-anchor", "middle")
+    .attr("transform", "rotate(-200)")
+    .attr("id", "label-y")
+    .text("GDP in billions of dollars")
+    
+    
+
+  }
+});
